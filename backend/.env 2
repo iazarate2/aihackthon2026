@@ -1,7 +1,0 @@
-# RefCheck AI — Backend Environment Variables
-# Place this file at: backend/.env
-
-MOCK_AI=true
-
-# We'll add the real API key later when we integrate the AI service.
-OPENAI_API_KEY=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

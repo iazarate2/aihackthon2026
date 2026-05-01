@@ -11,13 +11,19 @@ import json
 import base64
 import hashlib
 import random
+from typing import Optional
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import OpenAI, OpenAIError
 
-from app.rules_engine import get_rule, get_rules
+from app.rules_engine import get_rule
+from app.rule_retriever import format_retrieved_rules, retrieve_rules
 
-load_dotenv()
+BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PROJECT_DIR = os.path.dirname(BACKEND_DIR)
+
+load_dotenv(os.path.join(BACKEND_DIR, ".env"))
+load_dotenv(os.path.join(PROJECT_DIR, ".env"))
 
 MOCK_AI = os.getenv("MOCK_AI", "true").lower() == "true"
 
@@ -74,6 +80,9 @@ def analyze_sample_case(case: dict, original_call: str) -> dict:
         "rule_reference": {
             "title": rule["title"],
             "summary": rule["summary"],
+            "source_label": rule.get("source_label"),
+            "source_url": rule.get("source_url"),
+            "video_rulebook_url": rule.get("video_rulebook_url"),
         },
         "key_frames": [],  # sample cases have no real frames
         "limitations": case["limitations"],
@@ -163,8 +172,8 @@ _MOCK_PREDICTIONS = [
 def analyze_video_upload(
     original_call: str,
     frame_urls: list[str],
-    frame_paths: list[str] | None = None,
-    filename: str | None = None,
+    frame_paths: Optional[list[str]] = None,
+    filename: Optional[str] = None,
 ) -> dict:
     """
     Analyze uploaded video frames.
@@ -195,6 +204,9 @@ def analyze_video_upload(
         "rule_reference": {
             "title": rule["title"],
             "summary": rule["summary"],
+            "source_label": rule.get("source_label"),
+            "source_url": rule.get("source_url"),
+            "video_rulebook_url": rule.get("video_rulebook_url"),
         },
         "key_frames": frame_urls,
         "limitations": mock["limitations"],
@@ -267,14 +279,81 @@ def _encode_frame(path: str) -> str:
         return base64.b64encode(f.read()).decode("utf-8")
 
 
-def _build_rules_context() -> str:
-    rules = get_rules()
-    lines = []
-    for key, rule in rules.items():
-        lines.append(f"[{rule['title']}]")
-        lines.append(rule["summary"])
-        lines.append("")
-    return "\n".join(lines)
+_OBSERVATION_PROMPT = """You are analyzing frames from a basketball charge/block play.
+
+Describe only what is visible. Do not decide the verdict yet.
+
+Return ONLY valid JSON:
+{{
+  "play_description": "concise description of the sequence",
+  "visual_cues": [
+    "cue 1",
+    "cue 2",
+    "cue 3"
+  ],
+  "uncertainties": [
+    "uncertainty 1"
+  ]
+}}"""
+
+
+_FINAL_RAG_PROMPT = """You are an expert NBA/NCAA basketball referee reviewing a charge vs. blocking foul call.
+
+Use ONLY the retrieved rule context below to decide whether the original call is fair.
+If the frames or description do not provide enough evidence, return Inconclusive rather than guessing.
+
+=== ORIGINAL CALL ===
+{original_call}
+
+=== AI PLAY DESCRIPTION ===
+{play_description}
+
+=== VISUAL CUES ===
+{visual_cues}
+
+=== UNCERTAINTIES ===
+{uncertainties}
+
+=== RETRIEVED RULE CONTEXT ===
+{retrieved_rules}
+
+=== DECISION CRITERIA ===
+- If the retrieved rules support the original call, predicted_call should match the original call.
+- If the retrieved rules clearly support the opposite call, predicted_call should be the better supported call.
+- If evidence is unclear, predicted_call should be Inconclusive.
+
+Return ONLY valid JSON:
+{{
+  "predicted_call": "Charge | Blocking Foul | No Call | Inconclusive",
+  "confidence": 0.0,
+  "evidence": [
+    "observation tied to retrieved rule context",
+    "observation tied to retrieved rule context",
+    "observation tied to retrieved rule context"
+  ],
+  "rule_key": "legal_guarding_position | defender_moving_into_path | airborne_offensive_player | contact_location | restricted_area | inconclusive_evidence",
+  "cited_rule_ids": [
+    "rule_id_1",
+    "rule_id_2"
+  ],
+  "limitations": [
+    "limitation 1"
+  ]
+}}"""
+
+
+def _json_from_response(raw: str, fallback: dict) -> dict:
+    raw = (raw or "").strip()
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1]
+    if raw.endswith("```"):
+        raw = raw.rsplit("\n", 1)[0]
+    raw = raw.strip()
+
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return fallback
 
 
 def _real_analysis(
@@ -282,19 +361,17 @@ def _real_analysis(
     frame_urls: list[str],
     frame_paths: list[str],
 ) -> dict:
-    """Send frames to GPT-4o for real analysis."""
+    """Analyze frames with a lightweight RAG flow over basketball rules."""
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise ValueError("OPENAI_API_KEY not set. Set MOCK_AI=true or add key.")
 
     client = OpenAI(api_key=api_key)
-    rules_context = _build_rules_context()
-    system = _SYSTEM_PROMPT.format(rules_context=rules_context)
 
     content = [
         {
             "type": "text",
-            "text": f"Analyze these {len(frame_paths)} frames from a basketball charge/block play. The original referee call was: {original_call}.",
+            "text": f"Describe these {len(frame_paths)} frames from a basketball charge/block play. The original referee call was: {original_call}.",
         }
     ]
 
@@ -306,39 +383,83 @@ def _real_analysis(
             "image_url": {"url": f"data:image/jpeg;base64,{b64}", "detail": "high"},
         })
 
-    response = client.chat.completions.create(
-        model=os.getenv("OPENAI_MODEL", "gpt-4o"),
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": content},
-        ],
-        max_tokens=800,
-        temperature=0.2,
-    )
+    try:
+        observation_response = client.chat.completions.create(
+            model=os.getenv("OPENAI_MODEL", "gpt-4o"),
+            messages=[
+                {"role": "system", "content": _OBSERVATION_PROMPT},
+                {"role": "user", "content": content},
+            ],
+            max_tokens=650,
+            temperature=0.2,
+        )
+    except OpenAIError as e:
+        raise RuntimeError(f"OpenAI analysis failed: {e}") from e
 
-    raw = response.choices[0].message.content or ""
-    raw = raw.strip()
-    if raw.startswith("```"):
-        raw = raw.split("\n", 1)[1]
-    if raw.endswith("```"):
-        raw = raw.rsplit("\n", 1)[0]
-    raw = raw.strip()
+    observation = _json_from_response(
+        observation_response.choices[0].message.content or "",
+        {
+            "play_description": "The play could not be described reliably from the AI response.",
+            "visual_cues": [],
+            "uncertainties": ["AI play-description response could not be parsed."],
+        },
+    )
+    visual_cues = observation.get("visual_cues", [])
+    uncertainties = observation.get("uncertainties", [])
+    retrieval_query = " ".join([
+        original_call,
+        str(observation.get("play_description", "")),
+        " ".join(str(cue) for cue in visual_cues),
+        " ".join(str(item) for item in uncertainties),
+    ])
+    retrieved_rules = retrieve_rules(retrieval_query, top_k=3)
+    retrieved_context = format_retrieved_rules(retrieved_rules)
 
     try:
-        ai = json.loads(raw)
-    except json.JSONDecodeError:
-        ai = {
+        final_response = client.chat.completions.create(
+            model=os.getenv("OPENAI_TEXT_MODEL", os.getenv("OPENAI_MODEL", "gpt-4o")),
+            messages=[
+                {
+                    "role": "system",
+                    "content": _FINAL_RAG_PROMPT.format(
+                        original_call=original_call,
+                        play_description=observation.get("play_description", ""),
+                        visual_cues=json.dumps(visual_cues),
+                        uncertainties=json.dumps(uncertainties),
+                        retrieved_rules=retrieved_context,
+                    ),
+                },
+                {"role": "user", "content": "Return the final officiating review JSON."},
+            ],
+            max_tokens=800,
+            temperature=0.2,
+        )
+    except OpenAIError as e:
+        raise RuntimeError(f"OpenAI RAG verdict failed: {e}") from e
+
+    ai = _json_from_response(
+        final_response.choices[0].message.content or "",
+        {
             "predicted_call": "Inconclusive",
             "confidence": 0.3,
             "evidence": ["AI response could not be parsed."],
             "rule_key": "inconclusive_evidence",
+            "cited_rule_ids": ["inconclusive_evidence"],
             "limitations": ["Response parsing failed."],
-        }
+        },
+    )
 
     predicted = ai.get("predicted_call", "Inconclusive")
+    if predicted not in {"Charge", "Blocking Foul", "No Call", "Inconclusive"}:
+        predicted = "Inconclusive"
     conf = round(max(0.0, min(1.0, float(ai.get("confidence", 0.5)))), 2)
     verdict, rec = compute_verdict(original_call, predicted, conf)
     rule = get_rule(ai.get("rule_key", "inconclusive_evidence"))
+    cited_ids = set(ai.get("cited_rule_ids", []))
+    cited_rules = [
+        rule_item for rule_item in retrieved_rules
+        if rule_item["id"] in cited_ids
+    ] or retrieved_rules
 
     return {
         "verdict": verdict,
@@ -351,7 +472,13 @@ def _real_analysis(
         "rule_reference": {
             "title": rule["title"],
             "summary": rule["summary"],
+            "source_label": rule.get("source_label"),
+            "source_url": rule.get("source_url"),
+            "video_rulebook_url": rule.get("video_rulebook_url"),
         },
+        "play_description": observation.get("play_description", ""),
+        "retrieved_rules": retrieved_rules,
+        "cited_rules": cited_rules,
         "key_frames": frame_urls,
         "limitations": ai.get("limitations", []),
     }

@@ -2,6 +2,9 @@
   "rules": {
     "legal_guarding_position": {
       "title": "Legal Guarding Position",
+      "source_label": "NBA Rule No. 12, Personal Fouls — Section II: By Dribbler",
+      "source_url": "https://official.nba.com/rule-no-12-fouls-and-penalties/",
+      "video_rulebook_url": "https://videorulebook.nba.com/rule/on-ball-defenders/",
       "summary": "To draw a charge, the defender must establish legal guarding position — both feet set, facing the opponent, torso square — before the offensive player begins their upward motion or gathers the ball.",
       "indicators_charge": [
         "Defender's feet are set before contact",
@@ -15,6 +18,9 @@
     },
     "defender_moving_into_path": {
       "title": "Defender Moving Into Path",
+      "source_label": "NBA Rule No. 12, Personal Fouls — Section I: Types / Section II: By Dribbler",
+      "source_url": "https://official.nba.com/rule-no-12-fouls-and-penalties/",
+      "video_rulebook_url": "https://videorulebook.nba.com/rule/on-ball-blocking-fouls/",
       "summary": "If the defender is still moving laterally or forward into the offensive player's path at the moment of contact, the defender has not established legal guarding position and a blocking foul may be called.",
       "indicators_charge": [
         "Defender stopped all movement before contact"
@@ -26,6 +32,9 @@
     },
     "airborne_offensive_player": {
       "title": "Offensive Player Airborne",
+      "source_label": "NBA Rule Authority — Block-Charge / Airborne offensive player landing space",
+      "source_url": "https://official.nba.com/the-nba-rule-authority/",
+      "video_rulebook_url": "https://videorulebook.nba.com/rule/block-charge/",
       "summary": "If the offensive player is already airborne (left the ground) before the defender establishes position, the defender cannot draw a charge. A blocking foul may be supported even if the defender appears set at the moment of contact.",
       "indicators_charge": [
         "Offensive player initiates contact while still on the ground"
@@ -37,6 +46,9 @@
     },
     "contact_location": {
       "title": "Contact Location",
+      "source_label": "NBA Rule No. 12, Personal Fouls — Section I: Types",
+      "source_url": "https://official.nba.com/rule-no-12-fouls-and-penalties/",
+      "video_rulebook_url": "https://videorulebook.nba.com/rule/block-charge/",
       "summary": "Contact through the defender's torso or chest area may support a charge call if the defender was legally set. Contact initiated by the defender's hip, shoulder, or arm extending into the path may support a blocking foul.",
       "indicators_charge": [
         "Contact occurs through the defender's chest or torso",
@@ -49,6 +61,9 @@
     },
     "restricted_area": {
       "title": "Restricted Area Note",
+      "source_label": "NBA Rule Authority — Restricted Area and Block-Charge",
+      "source_url": "https://official.nba.com/the-nba-rule-authority/",
+      "video_rulebook_url": "https://videorulebook.nba.com/rule/restricted-area-blocking-fouls/",
       "summary": "Inside the restricted area (the semi-circle under the basket), a defender generally cannot draw a charge on a player driving to the basket. If the play occurs near the restricted area but the court line is not clearly visible, confidence should be lowered.",
       "indicators_charge": [
         "Defender is clearly outside the restricted area arc"
@@ -60,6 +75,9 @@
     },
     "inconclusive_evidence": {
       "title": "Inconclusive Evidence",
+      "source_label": "NBA Official — Restricted Area Replay Review Guidance",
+      "source_url": "https://official.nba.com/trigger/restricted-area-block-charge/",
+      "video_rulebook_url": "https://videorulebook.nba.com/rule/block-charge/",
       "summary": "If the camera angle is poor, feet are blocked from view, video is blurry, or the key moment of contact is not captured in the extracted frames, the analysis should return Inconclusive rather than guessing.",
       "indicators_charge": [],
       "indicators_block": [],

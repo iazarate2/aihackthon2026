@@ -6,6 +6,7 @@ FastAPI backend server.
 import os
 import uuid
 import shutil
+from typing import Optional
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -86,8 +87,8 @@ ALLOWED_EXT = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
 @app.post("/review")
 async def review(
     original_call: str = Form(...),
-    sample_case_id: str | None = Form(None),
-    file: UploadFile | None = File(None),
+    sample_case_id: Optional[str] = Form(None),
+    file: Optional[UploadFile] = File(None),
 ):
     """
     Run a charge-vs-block review.
@@ -129,16 +130,24 @@ async def review(
             raise HTTPException(status_code=500, detail=f"Failed to save video: {e}")
 
         try:
-            saved = extract_frames(video_path, os.path.join(FRAMES_DIR, video_id), num_frames=8)
+            saved = extract_frames(
+                video_path,
+                os.path.join(FRAMES_DIR, video_id),
+                num_frames=12,
+                candidate_frames=36,
+            )
         except ValueError as e:
             raise HTTPException(status_code=422, detail=str(e))
 
         frame_urls = [f"/frames/{video_id}/{os.path.basename(p)}" for p in saved]
-        return analyze_video_upload(
-            original_call, frame_urls,
-            frame_paths=saved,
-            filename=file.filename,
-        )
+        try:
+            return analyze_video_upload(
+                original_call, frame_urls,
+                frame_paths=saved,
+                filename=file.filename,
+            )
+        except RuntimeError as e:
+            raise HTTPException(status_code=502, detail=str(e))
 
     # Neither provided
     raise HTTPException(

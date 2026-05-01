@@ -2,6 +2,7 @@
 
 import json
 import os
+from typing import Optional
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 
@@ -27,7 +28,7 @@ def get_sample_cases() -> list[dict]:
     return _load_json("sample_cases.json")["cases"]
 
 
-def get_sample_case(case_id: str) -> dict | None:
+def get_sample_case(case_id: str) -> Optional[dict]:
     """Return a single sample case by id, or None."""
     for case in get_sample_cases():
         if case["id"] == case_id:

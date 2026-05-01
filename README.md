@@ -35,7 +35,7 @@ A working app that supports one review type well is better than a beautiful app 
 - **Frontend:** React + Vite
 - **Backend:** Python FastAPI
 - **Video Processing:** OpenCV
-- **Analysis:** Mock AI / rule-based engine (multimodal AI ready)
+- **Analysis:** GPT-4o multimodal frame analysis + lightweight rule RAG
 - **Deploy:** Vercel (frontend) + Render/Railway (backend)
 
 ## Setup
@@ -73,7 +73,19 @@ Returns list of demo cases.
 ### `POST /review`
 Multipart form: `original_call` (required), `sample_case_id` (optional), `file` (optional video upload).
 
-Returns verdict, recommendation, confidence, evidence, rule reference, key frames, and limitations.
+Returns verdict, recommendation, confidence, evidence, retrieved/cited rule references, key frames, and limitations.
+
+## AI + RAG Flow
+
+For uploaded videos, RefCheck AI uses a lightweight retrieval-augmented generation flow:
+
+1. OpenCV extracts evenly spaced key frames from the uploaded clip.
+2. GPT-4o describes the visible play without making a verdict yet.
+3. The backend retrieves the most relevant basketball rule chunks from `backend/data/basketball_rules.json`, including NBA rulebook/video-rulebook source labels and URLs.
+4. GPT-4o compares the play description against only the retrieved rule context.
+5. The API returns a verdict, confidence score, evidence, cited official rule references, key frames, and limitations.
+
+The sample-case library remains deterministic for demos without API usage.
 
 ## Sample Cases
 
@@ -86,7 +98,8 @@ Returns verdict, recommendation, confidence, evidence, rule reference, key frame
 
 ## AI Limitations
 
-- MVP uses mock/rule-based analysis
+- Uploaded-video review requires a working `OPENAI_API_KEY` and available model quota
+- Sample cases use predefined demo analyses
 - Camera angle and video quality affect accuracy
 - Restricted area detection requires visible court lines
 - Does not replace official referee judgment
@@ -142,7 +155,6 @@ allow_origins=[
 
 ## Future Work
 
-- Integrate real multimodal vision model (GPT-4o / Gemini)
 - Train on labeled basketball officiating clips
 - Add pose estimation for body position analysis
 - Detect restricted area arc from court lines

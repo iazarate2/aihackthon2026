@@ -5,7 +5,7 @@ export default function FramePreview({ frames }) {
 
   return (
     <div style={{ marginTop: '1rem' }}>
-      <label>Key Frames</label>
+      <label>AI Key Frames</label>
       <div className="frame-grid">
         {frames.map((f, i) => (
           <img key={i} src={`${API}${f}`} alt={`Frame ${i + 1}`} />

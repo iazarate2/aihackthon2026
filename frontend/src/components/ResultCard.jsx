@@ -107,7 +107,11 @@ export default function ResultCard({ result }) {
           </div>
 
           {/* Rule */}
-          <RuleCard rule={result.rule_reference} />
+          <RuleCard
+            rule={result.rule_reference}
+            retrievedRules={result.retrieved_rules}
+            citedRules={result.cited_rules}
+          />
 
           {/* Frames */}
           <FramePreview frames={result.key_frames} />

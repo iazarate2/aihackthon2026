@@ -1,31 +1,23 @@
-import { useState, useEffect } from 'react';
-import SampleCaseSelector from './SampleCaseSelector';
+import { useState } from 'react';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+function displayError(message) {
+  if (!message) return 'Review request failed.';
+  if (message.includes('insufficient_quota') || message.includes('exceeded your current quota')) {
+    return 'Real AI analysis is enabled, but the OpenAI account has no available quota. Add billing/credits or use another API key, then run the review again.';
+  }
+  if (message.startsWith('OpenAI analysis failed:')) {
+    return message.replace('OpenAI analysis failed:', 'Real AI analysis failed:').trim();
+  }
+  return message;
+}
 
 export default function UploadPanel({ onResult, onLoading }) {
   const [originalCall, setOriginalCall] = useState('Charge');
   const [file, setFile] = useState(null);
-  const [sampleCaseId, setSampleCaseId] = useState(null);
-  const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  useEffect(() => {
-    fetch(`${API}/sample-cases`)
-      .then(r => r.json())
-      .then(d => setCases(d.cases || []))
-      .catch(() => {});
-  }, []);
-
-  // When a sample case is selected, auto-fill original call
-  useEffect(() => {
-    if (sampleCaseId) {
-      const c = cases.find(c => c.id === sampleCaseId);
-      if (c) setOriginalCall(c.original_call);
-      setFile(null);
-    }
-  }, [sampleCaseId, cases]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -36,12 +28,10 @@ export default function UploadPanel({ onResult, onLoading }) {
     const body = new FormData();
     body.append('original_call', originalCall);
 
-    if (sampleCaseId) {
-      body.append('sample_case_id', sampleCaseId);
-    } else if (file) {
+    if (file) {
       body.append('file', file);
     } else {
-      setError('Select a sample case or upload a video clip.');
+      setError('Upload a video clip before running the review.');
       setLoading(false);
       onLoading(false);
       return;
@@ -56,7 +46,7 @@ export default function UploadPanel({ onResult, onLoading }) {
       const data = await res.json();
       onResult(data);
     } catch (err) {
-      setError(err.message);
+      setError(displayError(err.message));
     } finally {
       setLoading(false);
       onLoading(false);
@@ -66,45 +56,48 @@ export default function UploadPanel({ onResult, onLoading }) {
   return (
     <section>
       <div className="container">
-        <h2 style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-dim)', marginBottom: '1rem' }}>
-          Review Panel
-        </h2>
-        <form onSubmit={handleSubmit} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {/* Original call */}
-          <div>
-            <label htmlFor="call">Original Referee Call</label>
-            <select id="call" value={originalCall} onChange={e => setOriginalCall(e.target.value)}>
-              <option>Charge</option>
-              <option>Blocking Foul</option>
-              <option>No Call</option>
-            </select>
+        <div className="review-layout">
+          <aside className="card glass-panel review-intro">
+            <div className="review-eyebrow">Review Panel</div>
+            <h2 className="review-title">Put the play on the floor.</h2>
+            <p className="review-copy">
+              Choose the original whistle and upload a clip. The backend extracts key frames, retrieves relevant NBA rule context, and reviews the play with AI.
+            </p>
+          </aside>
+
+          <div className="card glass-panel">
+            <form onSubmit={handleSubmit} className="review-form">
+              <div className="form-row">
+                <label htmlFor="call">Original Referee Call</label>
+                <select id="call" value={originalCall} onChange={e => setOriginalCall(e.target.value)}>
+                  <option>Charge</option>
+                  <option>Blocking Foul</option>
+                  <option>No Call</option>
+                </select>
+              </div>
+
+              <div className="form-row">
+                <label htmlFor="clip">Upload Video Clip</label>
+                <label className="file-drop" htmlFor="clip">
+                  <span className="file-drop-title">{file ? file.name : 'Choose a short basketball clip'}</span>
+                  <span className="file-drop-meta">MP4, MOV, AVI, MKV, or WEBM</span>
+                  <input
+                    id="clip"
+                    type="file"
+                    accept="video/mp4,video/quicktime,video/x-msvideo,video/webm"
+                    onChange={e => setFile(e.target.files?.[0] || null)}
+                  />
+                </label>
+              </div>
+
+              {error && <p className="error-box">{error}</p>}
+
+              <button type="submit" className="btn btn-primary" disabled={loading}>
+                {loading ? <><span className="spinner" /> Reviewing...</> : 'Run Review'}
+              </button>
+            </form>
           </div>
-
-          {/* File upload */}
-          <div>
-            <label>Upload Video Clip</label>
-            <input
-              type="file"
-              accept="video/mp4,video/quicktime,video/x-msvideo,video/webm"
-              onChange={e => { setFile(e.target.files?.[0] || null); setSampleCaseId(null); }}
-            />
-            {file && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem', display: 'block' }}>{file.name}</span>}
-          </div>
-
-          {/* Divider */}
-          <div style={{ textAlign: 'center', color: 'var(--text-dim)', fontSize: '0.75rem' }}>— or —</div>
-
-          {/* Sample cases */}
-          <SampleCaseSelector cases={cases} selected={sampleCaseId} onSelect={setSampleCaseId} />
-
-          {/* Error */}
-          {error && <p style={{ color: 'var(--red)', fontSize: '0.85rem' }}>{error}</p>}
-
-          {/* Submit */}
-          <button type="submit" className="btn btn-primary" disabled={loading} style={{ marginTop: '0.5rem' }}>
-            {loading ? <><span className="spinner" /> Reviewing...</> : '🏀 Run Review'}
-          </button>
-        </form>
+        </div>
       </div>
     </section>
   );
