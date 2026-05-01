@@ -19,6 +19,21 @@ _DOMAIN_TERMS = {
     "inconclusive": {"blur", "blocked", "obscured", "angle", "quality", "unclear", "cannot"},
 }
 
+_SEVERE_INCONCLUSIVE_TERMS = {
+    "no players",
+    "does not show",
+    "not show",
+    "not visible",
+    "cannot see",
+    "off screen",
+    "blocked from view",
+    "camera cut",
+    "crowd shot",
+    "timeout",
+    "bench",
+    "not captured",
+}
+
 
 def _tokenize(text: str) -> set[str]:
     words = re.findall(r"[a-z0-9']+", text.lower())
@@ -55,12 +70,18 @@ def retrieve_rules(query: str, top_k: int = 3) -> list[dict]:
     """Return the most relevant rule chunks for a play description."""
     rules = get_rules()
     query_terms = _tokenize(query)
+    query_lower = query.lower()
+    severe_inconclusive = any(term in query_lower for term in _SEVERE_INCONCLUSIVE_TERMS)
     scored = []
 
     for key, rule in rules.items():
         rule_terms = _tokenize(_rule_text(rule))
         overlap = len(query_terms & rule_terms)
         score = overlap + _domain_bonus(query, key)
+        if key == "inconclusive_evidence" and not severe_inconclusive:
+            score -= 5
+        if key == "inconclusive_evidence" and severe_inconclusive:
+            score += 5
         scored.append((score, key, rule))
 
     scored.sort(key=lambda item: item[0], reverse=True)

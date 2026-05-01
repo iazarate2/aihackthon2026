@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import RuleCard from './RuleCard';
 import FramePreview from './FramePreview';
+import Icon from './Icon';
 
 function verdictBadge(verdict) {
   if (verdict === 'Fair Call') return 'badge-green';
@@ -26,10 +27,16 @@ function confColor(conf) {
   return 'var(--red)';
 }
 
-function verdictEmoji(verdict) {
-  if (verdict === 'Fair Call') return '✅';
-  if (verdict === 'Bad Call') return '❌';
-  return '⚠️';
+function verdictIcon(verdict) {
+  if (verdict === 'Fair Call') return 'check';
+  if (verdict === 'Bad Call') return 'x';
+  return 'alert';
+}
+
+function verdictIconColor(verdict) {
+  if (verdict === 'Fair Call') return 'var(--green)';
+  if (verdict === 'Bad Call') return 'var(--red)';
+  return 'var(--yellow)';
 }
 
 export default function ResultCard({ result }) {
@@ -52,12 +59,14 @@ export default function ResultCard({ result }) {
         <div className={`card animate-in ${verdictGlow(result.verdict)}`} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
           {/* Verdict hero */}
-          <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.35rem' }}>{verdictEmoji(result.verdict)}</div>
+          <div className="verdict-hero">
+            <div className="verdict-icon" style={{ color: verdictIconColor(result.verdict) }}>
+              <Icon name={verdictIcon(result.verdict)} size={30} />
+            </div>
             <span className={`badge badge-verdict ${verdictBadge(result.verdict)}`}>
               {result.verdict}
             </span>
-            <div style={{ marginTop: '0.6rem' }}>
+            <div>
               <span className={`badge ${recBadge(result.challenge_recommendation)}`}>
                 Coach Recommendation: {result.challenge_recommendation}
               </span>
@@ -98,7 +107,7 @@ export default function ResultCard({ result }) {
 
           {/* Evidence */}
           <div>
-            <label>📝 Evidence</label>
+            <label className="label-with-icon"><Icon name="fileText" size={14} /> Evidence</label>
             <ul style={{ paddingLeft: '1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
               {result.evidence.map((e, i) => (
                 <li key={i} style={{ lineHeight: 1.5 }}>{e}</li>
@@ -119,7 +128,7 @@ export default function ResultCard({ result }) {
           {/* Limitations */}
           {result.limitations?.length > 0 && (
             <div style={{ padding: '0.85rem', background: 'rgba(234, 179, 8, 0.05)', borderRadius: '8px', border: '1px solid rgba(234, 179, 8, 0.15)' }}>
-              <label>⚠️ Limitations</label>
+              <label className="label-with-icon"><Icon name="alert" size={14} /> Limitations</label>
               <ul style={{ paddingLeft: '1.25rem', fontSize: '0.8rem', color: 'var(--text-dim)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                 {result.limitations.map((l, i) => <li key={i}>{l}</li>)}
               </ul>

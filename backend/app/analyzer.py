@@ -281,7 +281,8 @@ def _encode_frame(path: str) -> str:
 
 _OBSERVATION_PROMPT = """You are analyzing frames from a basketball charge/block play.
 
-Describe only what is visible. Do not decide the verdict yet.
+Describe what is visible. Do not decide the final fair/bad-call verdict yet.
+Prioritize visible basketball action over captions, memes, scorebugs, crowd shots, and broadcast overlays.
 
 Return ONLY valid JSON:
 {{
@@ -300,7 +301,10 @@ Return ONLY valid JSON:
 _FINAL_RAG_PROMPT = """You are an expert NBA/NCAA basketball referee reviewing a charge vs. blocking foul call.
 
 Use ONLY the retrieved rule context below to decide whether the original call is fair.
-If the frames or description do not provide enough evidence, return Inconclusive rather than guessing.
+You will also receive the key frames directly. Use the frames as primary visual evidence and the play description as supporting context.
+Do not default to Inconclusive just because every detail is not visible.
+If the frames show the contact sequence and at least one charge/block indicator, choose the best supported call with an appropriate confidence.
+Use Inconclusive only when the relevant play/contact is not visible, the clip is a crowd/bench/caption shot, the players are off screen, or the camera angle makes the rule criteria impossible to assess.
 
 === ORIGINAL CALL ===
 {original_call}
@@ -318,9 +322,13 @@ If the frames or description do not provide enough evidence, return Inconclusive
 {retrieved_rules}
 
 === DECISION CRITERIA ===
+- predicted_call is the best supported basketball call from the retrieved rules.
+- predicted_call is NOT the same thing as the final verdict.
 - If the retrieved rules support the original call, predicted_call should match the original call.
 - If the retrieved rules clearly support the opposite call, predicted_call should be the better supported call.
-- If evidence is unclear, predicted_call should be Inconclusive.
+- If contact is visible but some details are uncertain, choose Charge, Blocking Foul, or No Call with lower confidence.
+- Use Inconclusive only when there is no usable view of the play/contact.
+- Confidence guide: visible but imperfect evidence should usually be 0.55-0.70, clear evidence should be 0.70+, and unusable evidence should be below 0.55.
 
 Return ONLY valid JSON:
 {{
@@ -356,6 +364,20 @@ def _json_from_response(raw: str, fallback: dict) -> dict:
         return fallback
 
 
+def _frame_content(frame_paths: list[str], intro: str) -> list[dict]:
+    content = [{"type": "text", "text": intro}]
+
+    for idx, path in enumerate(frame_paths, start=1):
+        content.append({"type": "text", "text": f"--- Frame {idx} of {len(frame_paths)} ---"})
+        b64 = _encode_frame(path)
+        content.append({
+            "type": "image_url",
+            "image_url": {"url": f"data:image/jpeg;base64,{b64}", "detail": "high"},
+        })
+
+    return content
+
+
 def _real_analysis(
     original_call: str,
     frame_urls: list[str],
@@ -368,20 +390,10 @@ def _real_analysis(
 
     client = OpenAI(api_key=api_key)
 
-    content = [
-        {
-            "type": "text",
-            "text": f"Describe these {len(frame_paths)} frames from a basketball charge/block play. The original referee call was: {original_call}.",
-        }
-    ]
-
-    for idx, path in enumerate(frame_paths, start=1):
-        content.append({"type": "text", "text": f"--- Frame {idx} of {len(frame_paths)} ---"})
-        b64 = _encode_frame(path)
-        content.append({
-            "type": "image_url",
-            "image_url": {"url": f"data:image/jpeg;base64,{b64}", "detail": "high"},
-        })
+    content = _frame_content(
+        frame_paths,
+        f"Describe these {len(frame_paths)} frames from a basketball charge/block play. The original referee call was: {original_call}.",
+    )
 
     try:
         observation_response = client.chat.completions.create(
@@ -429,7 +441,13 @@ def _real_analysis(
                         retrieved_rules=retrieved_context,
                     ),
                 },
-                {"role": "user", "content": "Return the final officiating review JSON."},
+                {
+                    "role": "user",
+                    "content": _frame_content(
+                        frame_paths,
+                        "Review these frames directly, compare them against the retrieved rule context, and return the final officiating review JSON.",
+                    ),
+                },
             ],
             max_tokens=800,
             temperature=0.2,
