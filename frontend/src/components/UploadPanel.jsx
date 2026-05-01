@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -16,8 +16,21 @@ function displayError(message) {
 export default function UploadPanel({ onResult, onLoading }) {
   const [originalCall, setOriginalCall] = useState('Charge');
   const [file, setFile] = useState(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!file) {
+      setVideoPreviewUrl(null);
+      return undefined;
+    }
+
+    const url = URL.createObjectURL(file);
+    setVideoPreviewUrl(url);
+
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -89,6 +102,12 @@ export default function UploadPanel({ onResult, onLoading }) {
                   />
                 </label>
               </div>
+
+              {videoPreviewUrl && (
+                <div className="video-preview">
+                  <video src={videoPreviewUrl} controls playsInline preload="metadata" />
+                </div>
+              )}
 
               {error && <p className="error-box">{error}</p>}
 

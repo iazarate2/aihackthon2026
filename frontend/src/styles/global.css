@@ -484,6 +484,21 @@ section + section { border-top: 1px solid rgba(255, 255, 255, 0.09); }
   font-size: 0.78rem;
 }
 
+.video-preview {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #05080d;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+}
+
+.video-preview video {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  background: #05080d;
+}
+
 .divider {
   display: flex;
   align-items: center;
