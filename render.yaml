@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: refcheck-ai-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MOCK_AI
+        value: false
+      - key: OPENAI_MODEL
+        value: gpt-4o
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        fromService:
+          type: static
+          name: refcheck-ai-web
+          property: url
+
+  - type: static
+    name: refcheck-ai-web
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: refcheck-ai-api
+          property: url
+
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

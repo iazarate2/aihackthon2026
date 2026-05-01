@@ -1,6 +1,7 @@
 # Environment / secrets
 .env
 .env.local
+**/.env 2
 
 # Python
 __pycache__/
@@ -15,6 +16,8 @@ backend/extracted_frames/
 
 # Node / Vite
 node_modules/
+dist/
+frontend/dist/
 
 
 # OS

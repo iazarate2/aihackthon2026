@@ -106,6 +106,31 @@ The sample-case library remains deterministic for demos without API usage.
 
 ## Deployment
 
+### Full App → Render Blueprint
+
+This repo includes a `render.yaml` blueprint that deploys:
+
+- `refcheck-ai-api` — FastAPI backend
+- `refcheck-ai-web` — Vite static frontend
+
+Steps:
+
+1. Push this repo to GitHub
+2. Go to [render.com](https://render.com)
+3. Create a new **Blueprint**
+4. Connect this repo
+5. Render will detect `render.yaml`
+6. Add the required secret:
+   - `OPENAI_API_KEY` = your OpenAI API key
+7. Deploy both services
+
+The blueprint wires:
+
+- frontend `VITE_API_URL` to the backend Render URL
+- backend `CORS_ORIGINS` to the frontend Render URL
+
+Free Render services may sleep after inactivity and can take a minute to wake up.
+
 ### Frontend → Vercel
 
 1. Push your repo to GitHub
@@ -129,6 +154,8 @@ The sample-case library remains deterministic for demos without API usage.
 4. Add environment variables:
    - `MOCK_AI` = `true` (or `false` if you have OpenAI credits)
    - `OPENAI_API_KEY` = your key (only needed if `MOCK_AI=false`)
+   - `OPENAI_MODEL` = `gpt-4o`
+   - `CORS_ORIGINS` = your Vercel frontend URL (e.g. `https://refcheck-ai.vercel.app`)
 5. Deploy
 
 ### Backend → Railway (alternative)
@@ -144,13 +171,10 @@ The sample-case library remains deterministic for demos without API usage.
 
 ### Post-Deploy CORS
 
-After deploying, add your Vercel frontend URL to the CORS origins in `backend/app/main.py`:
+After deploying, set this backend environment variable to your Vercel frontend URL:
 
-```python
-allow_origins=[
-    "http://localhost:5173",
-    "https://your-app.vercel.app",  # add this
-]
+```env
+CORS_ORIGINS=https://your-app.vercel.app
 ```
 
 ## Future Work
