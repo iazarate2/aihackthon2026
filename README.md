@@ -120,11 +120,13 @@ Steps:
 3. Create a new **Blueprint**
 4. Connect this repo
 5. Render will detect `render.yaml`
-6. Add the required secret:
+6. Add the required environment values:
    - `OPENAI_API_KEY` = your OpenAI API key
+   - `VITE_API_URL` = your backend URL, usually `https://refcheck-ai-api.onrender.com`
+   - `CORS_ORIGINS` = your frontend URL, usually `https://refcheck-ai-web.onrender.com`
 7. Deploy both services
 
-The blueprint wires:
+Render blueprints cannot automatically inject a service's public URL into another service. If your service names change or Render gives you different URLs, update:
 
 - frontend `VITE_API_URL` to the backend Render URL
 - backend `CORS_ORIGINS` to the frontend Render URL

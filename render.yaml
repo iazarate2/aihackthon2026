@@ -14,10 +14,7 @@ services:
       - key: OPENAI_API_KEY
         sync: false
       - key: CORS_ORIGINS
-        fromService:
-          type: web
-          name: refcheck-ai-web
-          property: url
+        sync: false
 
   - type: web
     name: refcheck-ai-web
@@ -27,10 +24,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: refcheck-ai-api
-          property: url
+        sync: false
 
     routes:
       - type: rewrite
