@@ -15,7 +15,7 @@ backend/extracted_frames/
 
 # Node / Vite
 node_modules/
-dist/
+
 
 # OS
 .DS_Store
