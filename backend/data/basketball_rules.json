@@ -1,0 +1,74 @@
+{
+  "rules": {
+    "legal_guarding_position": {
+      "title": "Legal Guarding Position",
+      "summary": "To draw a charge, the defender must establish legal guarding position — both feet set, facing the opponent, torso square — before the offensive player begins their upward motion or gathers the ball.",
+      "indicators_charge": [
+        "Defender's feet are set before contact",
+        "Defender is facing the offensive player",
+        "Defender's torso is square to the ball handler"
+      ],
+      "indicators_block": [
+        "Defender is still sliding into position at contact",
+        "Defender's feet are not set when contact occurs"
+      ]
+    },
+    "defender_moving_into_path": {
+      "title": "Defender Moving Into Path",
+      "summary": "If the defender is still moving laterally or forward into the offensive player's path at the moment of contact, the defender has not established legal guarding position and a blocking foul may be called.",
+      "indicators_charge": [
+        "Defender stopped all movement before contact"
+      ],
+      "indicators_block": [
+        "Defender is visibly sliding or lunging at moment of contact",
+        "Defender's momentum carries them into the offensive player"
+      ]
+    },
+    "airborne_offensive_player": {
+      "title": "Offensive Player Airborne",
+      "summary": "If the offensive player is already airborne (left the ground) before the defender establishes position, the defender cannot draw a charge. A blocking foul may be supported even if the defender appears set at the moment of contact.",
+      "indicators_charge": [
+        "Offensive player initiates contact while still on the ground"
+      ],
+      "indicators_block": [
+        "Offensive player is already in the air when defender arrives",
+        "Defender slides under an airborne player"
+      ]
+    },
+    "contact_location": {
+      "title": "Contact Location",
+      "summary": "Contact through the defender's torso or chest area may support a charge call if the defender was legally set. Contact initiated by the defender's hip, shoulder, or arm extending into the path may support a blocking foul.",
+      "indicators_charge": [
+        "Contact occurs through the defender's chest or torso",
+        "Offensive player drives directly into a set defender"
+      ],
+      "indicators_block": [
+        "Defender initiates contact with hip or shoulder",
+        "Defender leans or extends arm into offensive player's path"
+      ]
+    },
+    "restricted_area": {
+      "title": "Restricted Area Note",
+      "summary": "Inside the restricted area (the semi-circle under the basket), a defender generally cannot draw a charge on a player driving to the basket. If the play occurs near the restricted area but the court line is not clearly visible, confidence should be lowered.",
+      "indicators_charge": [
+        "Defender is clearly outside the restricted area arc"
+      ],
+      "indicators_block": [
+        "Defender appears to be inside the restricted area",
+        "Restricted area line is not visible — confidence reduced"
+      ]
+    },
+    "inconclusive_evidence": {
+      "title": "Inconclusive Evidence",
+      "summary": "If the camera angle is poor, feet are blocked from view, video is blurry, or the key moment of contact is not captured in the extracted frames, the analysis should return Inconclusive rather than guessing.",
+      "indicators_charge": [],
+      "indicators_block": [],
+      "indicators_inconclusive": [
+        "Key contact moment is not captured",
+        "Defender's feet are not visible",
+        "Camera angle obscures the play",
+        "Video quality is too low to assess positioning"
+      ]
+    }
+  }
+}

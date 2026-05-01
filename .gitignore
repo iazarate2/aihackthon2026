@@ -13,10 +13,9 @@ venv/
 backend/uploads/
 backend/extracted_frames/
 
-# Node / Next.js
+# Node / Vite
 node_modules/
-.next/
-out/
+dist/
 
 # OS
 .DS_Store

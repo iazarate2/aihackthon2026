@@ -1,0 +1,101 @@
+{
+  "cases": [
+    {
+      "id": "clear_charge_defender_set",
+      "title": "Clear Charge — Defender Set",
+      "description": "The defender establishes legal guarding position with both feet set and torso square before the ball handler drives into them.",
+      "original_call": "Charge",
+      "predicted_call": "Charge",
+      "confidence": 0.84,
+      "evidence": [
+        "Defender appears stationary with both feet set before contact.",
+        "Contact occurs through the defender's torso/chest area.",
+        "Offensive player drives directly into the set defender.",
+        "Defender is outside the restricted area."
+      ],
+      "rule_key": "legal_guarding_position",
+      "key_frame_index": 3,
+      "limitations": [
+        "Restricted area line is not fully visible in the frame."
+      ]
+    },
+    {
+      "id": "clear_block_defender_moving",
+      "title": "Clear Blocking Foul — Defender Still Moving",
+      "description": "The defender is still sliding laterally into the offensive player's path at the moment of contact.",
+      "original_call": "Blocking Foul",
+      "predicted_call": "Blocking Foul",
+      "confidence": 0.81,
+      "evidence": [
+        "Defender's feet are visibly in motion at the moment of contact.",
+        "Defender is sliding to the left as contact occurs.",
+        "Contact is initiated by the defender's hip, not the torso.",
+        "Offensive player was driving in a straight line."
+      ],
+      "rule_key": "defender_moving_into_path",
+      "key_frame_index": 2,
+      "limitations": [
+        "Lower body partially obscured by another player."
+      ]
+    },
+    {
+      "id": "no_call_incidental",
+      "title": "No Call — Incidental Contact",
+      "description": "Minor shoulder-to-shoulder contact occurs during a drive but neither player gains an unfair advantage.",
+      "original_call": "No Call",
+      "predicted_call": "No Call",
+      "confidence": 0.72,
+      "evidence": [
+        "Contact appears minimal and incidental.",
+        "Neither player's movement is significantly affected.",
+        "Both players continue their motion after contact.",
+        "No clear advantage or disadvantage is created."
+      ],
+      "rule_key": "contact_location",
+      "key_frame_index": 2,
+      "limitations": [
+        "Angle makes it difficult to assess the force of contact."
+      ]
+    },
+    {
+      "id": "inconclusive_bad_angle",
+      "title": "Inconclusive — Bad Camera Angle",
+      "description": "The camera is positioned behind the play, obscuring the defender's feet and the moment of contact.",
+      "original_call": "Charge",
+      "predicted_call": "Inconclusive",
+      "confidence": 0.35,
+      "evidence": [
+        "Defender's feet are not visible from this camera angle.",
+        "The moment of contact is partially blocked by another player.",
+        "Cannot determine if the defender was set before contact.",
+        "Video quality is too low to assess body positioning."
+      ],
+      "rule_key": "inconclusive_evidence",
+      "key_frame_index": 2,
+      "limitations": [
+        "Camera angle does not show the defender's lower body.",
+        "Key contact moment may have occurred between extracted frames."
+      ]
+    },
+    {
+      "id": "close_call_low_confidence",
+      "title": "Close Block/Charge — Low Confidence",
+      "description": "The defender appears to be nearly set but may still have slight lateral movement at the moment of contact. Very close call.",
+      "original_call": "Blocking Foul",
+      "predicted_call": "Charge",
+      "confidence": 0.58,
+      "evidence": [
+        "Defender appears mostly set but slight foot movement is possible.",
+        "Contact occurs through the torso area.",
+        "Offensive player drives into the defender on a straight-line path.",
+        "Defender's left foot may still be sliding at impact."
+      ],
+      "rule_key": "legal_guarding_position",
+      "key_frame_index": 3,
+      "limitations": [
+        "Frame rate may not capture exact moment feet were set.",
+        "Borderline call — confidence is near the threshold."
+      ]
+    }
+  ]
+}
