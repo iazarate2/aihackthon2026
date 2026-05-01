@@ -15,12 +15,13 @@ services:
         sync: false
       - key: CORS_ORIGINS
         fromService:
-          type: static
+          type: web
           name: refcheck-ai-web
           property: url
 
-  - type: static
+  - type: web
     name: refcheck-ai-web
+    runtime: static
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
